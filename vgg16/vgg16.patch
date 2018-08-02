@@ -1,0 +1,59 @@
+diff --git a/vgg16/vgg16.py b/vgg16/vgg16.py
+index 7225ea1..3190fd1 100644
+--- a/vgg16/vgg16.py
++++ b/vgg16/vgg16.py
+@@ -10,16 +10,19 @@
+ 
+ import tensorflow as tf
+ import numpy as np
++from numpy import *
++import scipy.io as sio
+ from scipy.misc import imread, imresize
+-from imagenet_classes import class_names
+-
++#from imagenet_classes import class_names
++#import skimage.io as io
++#from skimage import data_dir
+ 
+ class vgg16:
+     def __init__(self, imgs, weights=None, sess=None):
+         self.imgs = imgs
+         self.convlayers()
+         self.fc_layers()
+-        self.probs = tf.nn.softmax(self.fc3l)
++        self.probs = tf.nn.softmax(self.fc2)
+         if weights is not None and sess is not None:
+             self.load_weights(weights, sess)
+ 
+@@ -249,18 +252,23 @@ class vgg16:
+         weights = np.load(weight_file)
+         keys = sorted(weights.keys())
+         for i, k in enumerate(keys):
+-            print i, k, np.shape(weights[k])
++            print(i, k, np.shape(weights[k]))
+             sess.run(self.parameters[i].assign(weights[k]))
+ 
+ if __name__ == '__main__':
+     sess = tf.Session()
+     imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
+     vgg = vgg16(imgs, 'vgg16_weights.npz', sess)
++    d8=mat(zeros((9840,4096)))
++    for i in range(1,9840):
++       print(i)
++       strvalue=str(i)
++       str1=strvalue+'.png'
++       img1 = imread(str1, mode='RGB')
++       img1 = imresize(img1, (224, 224))
++       prob = sess.run(vgg.probs, feed_dict={vgg.imgs: [img1]})[0]
++       preds = (np.argsort(prob)[::-1])[0:5]
++       d8[(i-1),:]=prob
++    sio.savemat('08a.mat',{'a':d8})
++    np.savetxt("a.txt",d8)
+ 
+-    img1 = imread('laska.png', mode='RGB')
+-    img1 = imresize(img1, (224, 224))
+-
+-    prob = sess.run(vgg.probs, feed_dict={vgg.imgs: [img1]})[0]
+-    preds = (np.argsort(prob)[::-1])[0:5]
+-    for p in preds:
+-        print class_names[p], prob[p]
